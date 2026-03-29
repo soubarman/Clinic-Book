@@ -47,10 +47,10 @@ export default function DoctorCard({ doctor, selected, onClick }) {
             : getInitials(doctor.name)}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontWeight: 700, fontSize: 14, color: textColor, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <p style={{ fontWeight: 800, fontSize: 14, color: textColor, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {doctor.name}
           </p>
-          <p style={{ fontSize: 12, color: mutedColor, fontWeight: 500 }}>{doctor.specialization}</p>
+          <p style={{ fontSize: 11, color: mutedColor, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{doctor.specialization}</p>
         </div>
       </div>
 
@@ -65,7 +65,7 @@ export default function DoctorCard({ doctor, selected, onClick }) {
       {doctor.clinicId && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8 }}>
           <MapPin size={12} color={mutedColor} />
-          <span style={{ fontSize: 11, color: mutedColor, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <span style={{ fontSize: 11, color: mutedColor, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 500 }}>
             {doctor.clinicId.name || 'Clinic'}
           </span>
         </div>
@@ -77,8 +77,8 @@ export default function DoctorCard({ doctor, selected, onClick }) {
         borderTop: `1px solid ${selected ? 'rgba(0,0,0,0.1)' : 'var(--border)'}`,
         paddingTop: 10, marginTop: 4,
       }}>
-        <span style={{ fontSize: 12, color: mutedColor }}>Consultation</span>
-        <span style={{ fontWeight: 700, color: selected ? '#1a2e05' : 'var(--primary)', fontSize: 14 }}>
+        <span style={{ fontSize: 11, color: mutedColor, fontWeight: 600 }}>Fee</span>
+        <span style={{ fontWeight: 800, color: selected ? '#1a2e05' : 'var(--primary)', fontSize: 14 }}>
           ₹{doctor.fee}
         </span>
       </div>

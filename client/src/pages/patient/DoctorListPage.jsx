@@ -54,7 +54,8 @@ export default function DoctorListPage() {
     });
 
   return (
-    <div style={{ background: 'var(--surface)', minHeight: '100vh' }} className="has-bottom-nav">
+    <div style={{ background: 'var(--surface)', minHeight: '100vh', position: 'relative' }} className="has-bottom-nav">
+      <div style={{ maxWidth: 600, margin: '0 auto', background: 'white', minHeight: '100vh', boxShadow: '0 0 40px rgba(0,0,0,0.05)' }}>
       {/* Header */}
       <div style={{
         background: 'white', padding: '48px 20px 16px',
@@ -124,11 +125,11 @@ export default function DoctorListPage() {
         </p>
 
         {loading ? (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(165px, 1fr))', gap: 14 }}>
             {[...Array(6)].map((_, i) => <DoctorCardSkeleton key={i} />)}
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(165px, 1fr))', gap: 14 }}>
             {filtered.map((doc, i) => (
               <motion.div
                 key={doc._id}
@@ -144,6 +145,7 @@ export default function DoctorListPage() {
       </div>
 
       <BottomNav />
+      </div>
     </div>
   );
 }

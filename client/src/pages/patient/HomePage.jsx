@@ -49,7 +49,8 @@ export default function HomePage() {
   const nearClinics = clinics.slice(0, 4);
 
   return (
-    <div style={{ background: 'var(--surface)', minHeight: '100vh' }} className="has-bottom-nav">
+    <div style={{ background: 'var(--surface)', minHeight: '100vh', position: 'relative' }} className="has-bottom-nav">
+      <div style={{ maxWidth: 600, margin: '0 auto', background: 'white', minHeight: '100vh', boxShadow: '0 0 40px rgba(0,0,0,0.05)' }}>
       {/* Header */}
       <div style={{
         background: 'linear-gradient(135deg, #0EA5E9 0%, #6366F1 100%)',
@@ -126,11 +127,11 @@ export default function HomePage() {
           </div>
 
           {loading ? (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(165px, 1fr))', gap: 14 }}>
               {[...Array(4)].map((_, i) => <DoctorCardSkeleton key={i} />)}
             </div>
           ) : topDoctors.length > 0 ? (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(165px, 1fr))', gap: 14 }}>
               {topDoctors.map((doc, i) => (
                 <motion.div
                   key={doc._id}
@@ -207,6 +208,7 @@ export default function HomePage() {
       </div>
 
       <BottomNav />
+      </div>
     </div>
   );
 }

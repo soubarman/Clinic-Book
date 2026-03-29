@@ -49,8 +49,9 @@ export default function OnboardingPage() {
     <div style={{
       minHeight: '100vh', display: 'flex', flexDirection: 'column',
       background: slide.lightGradient, transition: 'background 0.6s ease',
-      maxWidth: 420, margin: '0 auto', position: 'relative', overflow: 'hidden',
+      position: 'relative', overflow: 'hidden',
     }}>
+      <div style={{ maxWidth: 500, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', flex: 1 }}>
       {/* Skip */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '20px 24px' }}>
         <button onClick={() => navigate('/login')} style={{
@@ -134,6 +135,7 @@ export default function OnboardingPage() {
           <ChevronRight size={18} />
         </button>
       </div>
+    </div>
     </div>
   );
 }

@@ -28,13 +28,15 @@ export default function ClinicSignupPage() {
   };
 
   if (done) return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(160deg,#D1FAE5,#E0F2FE)', padding: 32, textAlign: 'center', maxWidth: 420, margin: '0 auto' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(160deg,#D1FAE5,#E0F2FE)', padding: 32, textAlign: 'center' }}>
+      <div style={{ maxWidth: 500, margin: '0 auto', width: '100%' }}>
       <div style={{ fontSize: 64, marginBottom: 16 }}>🏥</div>
       <h2 style={{ fontFamily: 'Poppins,sans-serif', fontWeight: 800, fontSize: 24, marginBottom: 10 }}>Clinic Registered!</h2>
       <p style={{ color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: 28 }}>
         Your clinic is under review. You'll receive full access once the admin approves your registration.
       </p>
       <button className="btn-primary" style={{ width: '100%' }} onClick={() => navigate('/')}>Back to Home</button>
+      </div>
     </div>
   );
 
@@ -46,7 +48,8 @@ export default function ClinicSignupPage() {
   ];
 
   return (
-    <div style={{ background: 'var(--surface)', minHeight: '100vh', maxWidth: 420, margin: '0 auto' }}>
+    <div style={{ background: 'var(--surface)', minHeight: '100vh' }}>
+      <div style={{ maxWidth: 500, margin: '0 auto', width: '100%', background: 'white', minHeight: '100vh', boxShadow: '0 0 40px rgba(0,0,0,0.05)' }}>
       {/* Header */}
       <div style={{ background: 'linear-gradient(135deg,#10B981,#0EA5E9)', padding: '48px 20px 40px', borderRadius: '0 0 32px 32px' }}>
         <button onClick={() => navigate(-1)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', marginBottom: 16 }}>
@@ -98,6 +101,7 @@ export default function ClinicSignupPage() {
           {loading ? 'Submitting...' : '🏥 Register Clinic'}
         </button>
       </div>
+    </div>
     </div>
   );
 }

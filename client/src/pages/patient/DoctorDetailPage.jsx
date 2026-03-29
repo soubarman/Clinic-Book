@@ -119,23 +119,24 @@ export default function DoctorDetailPage() {
   }) : [];
 
   return (
-    <div style={{ background: 'var(--surface)', minHeight: '100vh', maxWidth: 420, margin: '0 auto' }} className="has-bottom-nav">
-      {/* Header */}
-      <div style={{
-        background: 'linear-gradient(135deg,#0EA5E9,#6366F1)',
-        padding: '40px 20px 80px', position: 'relative',
-        display: 'flex', alignItems: 'center', justifyContent: 'center'
-      }}>
-        <button onClick={() => navigate(-1)} style={{
-          position: 'absolute', left: 20, top: 40,
-          width: 38, height: 38, borderRadius: 12, background: 'rgba(255,255,255,0.2)',
-          border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          backdropFilter: 'blur(8px)',
+    <div style={{ background: 'var(--surface)', minHeight: '100vh', position: 'relative' }} className="has-bottom-nav">
+      <div style={{ maxWidth: 600, margin: '0 auto', background: 'white', minHeight: '100vh', boxShadow: '0 0 40px rgba(0,0,0,0.05)' }}>
+        {/* Header */}
+        <div style={{
+          background: 'linear-gradient(135deg,#0EA5E9,#6366F1)',
+          padding: '40px 20px 80px', position: 'relative',
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
         }}>
-          <ArrowLeft size={20} color="white" />
-        </button>
-        <h1 style={{ color: 'white', fontWeight: 800, fontSize: 18, fontFamily: 'Poppins, sans-serif' }}>Doctor Details</h1>
-      </div>
+          <button onClick={() => navigate(-1)} style={{
+            position: 'absolute', left: 20, top: 40,
+            width: 38, height: 38, borderRadius: 12, background: 'rgba(255,255,255,0.2)',
+            border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            backdropFilter: 'blur(8px)',
+          }}>
+            <ArrowLeft size={20} color="white" />
+          </button>
+          <h1 style={{ color: 'white', fontWeight: 800, fontSize: 18, fontFamily: 'Poppins, sans-serif' }}>Doctor Details</h1>
+        </div>
 
       {/* Doctor Card (floating) */}
       <div style={{ padding: '0 20px', marginTop: -40, position: 'relative', zIndex: 10 }}>
@@ -274,7 +275,7 @@ export default function DoctorDetailPage() {
       </div>
 
       {/* Sticky CTA */}
-      <div style={{ position: 'fixed', bottom: 70, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 420, padding: '0 20px', zIndex: 40 }}>
+      <div style={{ position: 'fixed', bottom: 70, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 600, padding: '0 20px', zIndex: 40 }}>
         <button className="btn-primary" style={{
           width: '100%', fontSize: 16, padding: '16px',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
@@ -287,6 +288,7 @@ export default function DoctorDetailPage() {
       </div>
 
       <BottomNav />
+      </div>
 
       {/* Login Prompt Modal */}
       <AnimatePresence>
