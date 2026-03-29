@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -7,6 +7,7 @@ import LoadingSpinner from './components/LoadingSpinner';
 // Lazy-load pages
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
+const ProfileSetupPage = lazy(() => import('./pages/ProfileSetupPage'));
 const HomePage = lazy(() => import('./pages/patient/HomePage'));
 const DoctorListPage = lazy(() => import('./pages/patient/DoctorListPage'));
 const DoctorDetailPage = lazy(() => import('./pages/patient/DoctorDetailPage'));
@@ -20,13 +21,31 @@ const ManageBookingsPage = lazy(() => import('./pages/admin/ManageBookingsPage')
 const ManageUsersPage = lazy(() => import('./pages/admin/ManageUsersPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 
-function RequireAuth({ children, role }) {
+// Only for users who MUST complete their profile
+function ProfileSetupRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <LoadingSpinner />;
   if (!user) return <Navigate to="/login" replace />;
-  if (role && user.role !== role && user.role !== 'admin') {
-    return <Navigate to="/" replace />;
-  }
+  if (user.profileComplete === true) return <Navigate to="/" replace />;
+  return children;
+}
+
+// Requires login - redirects to /login with return path
+function RequireAuth({ children, role }) {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+  if (loading) return <LoadingSpinner />;
+  if (!user) return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+  if (user.profileComplete === false) return <Navigate to="/profile-setup" state={{ from: location.pathname }} replace />;
+  if (role && user.role !== role && user.role !== 'admin') return <Navigate to="/" replace />;
+  return children;
+}
+
+// Redirect logged-in users away from login/onboarding
+function GuestOnly({ children }) {
+  const { user, loading } = useAuth();
+  if (loading) return <LoadingSpinner />;
+  if (user) return <Navigate to="/" replace />;
   return children;
 }
 
@@ -37,14 +56,17 @@ function AppRoutes() {
   return (
     <Suspense fallback={<LoadingSpinner />}>
       <Routes>
-        {/* Public */}
-        <Route path="/onboarding" element={<OnboardingPage />} />
-        <Route path="/login" element={user ? <Navigate to="/" /> : <LoginPage />} />
+        {/* Public — no auth required */}
+        <Route path="/onboarding" element={<GuestOnly><OnboardingPage /></GuestOnly>} />
+        <Route path="/login" element={<GuestOnly><LoginPage /></GuestOnly>} />
+        <Route path="/profile-setup" element={<ProfileSetupRoute><ProfileSetupPage /></ProfileSetupRoute>} />
 
-        {/* Patient routes */}
-        <Route path="/" element={<RequireAuth><HomePage /></RequireAuth>} />
-        <Route path="/doctors" element={<RequireAuth><DoctorListPage /></RequireAuth>} />
-        <Route path="/doctors/:id" element={<RequireAuth><DoctorDetailPage /></RequireAuth>} />
+        {/* Publicly browsable pages */}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/doctors" element={<DoctorListPage />} />
+        <Route path="/doctors/:id" element={<DoctorDetailPage />} />
+
+        {/* Protected — requires login */}
         <Route path="/bookings" element={<RequireAuth><BookingHistoryPage /></RequireAuth>} />
         <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
 

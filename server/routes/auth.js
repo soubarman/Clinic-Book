@@ -1,98 +1,168 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const admin = require('../config/firebase');
 
-const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 const generateToken = (id) =>
-  jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
+  jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '30d' });
 
-// POST /api/auth/send-otp
-router.post('/send-otp', async (req, res) => {
+const userPublicFields = (user) => ({
+  _id: user._id,
+  name: user.name,
+  phone: user.phone,
+  email: user.email,
+  role: user.role,
+  avatar: user.avatar,
+  area: user.area,
+  city: user.city,
+  profileComplete: user.profileComplete,
+  clinicId: user.clinicId,
+});
+
+// ─────────────────────────────────────────────
+// POST /api/auth/google-login
+// Verifies a Firebase ID token (Google or Phone) and syncs the user
+// ─────────────────────────────────────────────
+router.post('/google-login', async (req, res) => {
+  const { idToken } = req.body;
+  if (!idToken) return res.status(400).json({ message: 'No ID token provided' });
+
   try {
-    const { phone } = req.body;
-    if (!phone || phone.length < 10) {
-      return res.status(400).json({ message: 'Valid phone number required' });
-    }
+    const decoded = await admin.auth().verifyIdToken(idToken);
+    const { uid, email, name, picture } = decoded;
 
-    let user = await User.findOne({ phone });
+    let user = await User.findOne({ googleId: uid });
+    if (!user && email) user = await User.findOne({ email });
+
     if (!user) {
-      user = new User({ phone, role: 'patient' });
+      user = new User({
+        googleId: uid,
+        email: email || '',
+        name: name || '',
+        avatar: picture || '',
+        role: 'patient',
+        profileComplete: !!(name && email), // Still need phone & area
+      });
+    } else {
+      user.googleId = uid;
+      if (!user.avatar && picture) user.avatar = picture;
+      if (!user.email && email) user.email = email;
     }
 
-    const otp = process.env.OTP_MOCK === 'true' ? '123456' : generateOTP();
-    user.otp = otp;
-    user.otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
     await user.save();
-
-    // In production: send OTP via SMS provider
-    console.log(`📱 OTP for ${phone}: ${otp}`);
-
-    res.json({
-      message: 'OTP sent successfully',
-      // In dev mode, return OTP so frontend can pre-fill
-      ...(process.env.OTP_MOCK === 'true' && { devOtp: otp }),
-    });
+    const token = generateToken(user._id);
+    res.json({ token, user: userPublicFields(user) });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Google login error:', err);
+    res.status(401).json({ message: 'Invalid Firebase token' });
   }
 });
 
-// POST /api/auth/verify-otp
-router.post('/verify-otp', async (req, res) => {
+// ─────────────────────────────────────────────
+// POST /api/auth/email-signup
+// ─────────────────────────────────────────────
+router.post('/email-signup', async (req, res) => {
   try {
-    const { phone, otp, name } = req.body;
+    const { email, password, name } = req.body;
+    if (!email || !password) return res.status(400).json({ message: 'Email and password required' });
+    if (password.length < 6) return res.status(400).json({ message: 'Password must be at least 6 characters' });
 
-    const user = await User.findOne({ phone });
-    if (!user) return res.status(404).json({ message: 'User not found. Send OTP first.' });
+    const existing = await User.findOne({ email });
+    if (existing) return res.status(409).json({ message: 'Email already registered. Please sign in.' });
 
-    if (process.env.OTP_MOCK !== 'true') {
-      if (user.otp !== otp) return res.status(400).json({ message: 'Invalid OTP' });
-      if (new Date() > user.otpExpiry) return res.status(400).json({ message: 'OTP expired' });
-    }
-
-    if (name && !user.name) user.name = name;
-    user.otp = undefined;
-    user.otpExpiry = undefined;
-    await user.save();
+    const hashed = await bcrypt.hash(password, 10);
+    const user = await User.create({
+      email,
+      password: hashed,
+      name: name || '',
+      role: 'patient',
+      profileComplete: false,
+    });
 
     const token = generateToken(user._id);
-    res.json({
-      token,
-      user: {
-        _id: user._id,
-        name: user.name,
-        phone: user.phone,
-        role: user.role,
-        clinicId: user.clinicId,
-      },
-    });
+    res.status(201).json({ token, user: userPublicFields(user) });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// POST /api/auth/admin-login (direct password for admin)
+// ─────────────────────────────────────────────
+// POST /api/auth/email-login
+// ─────────────────────────────────────────────
+router.post('/email-login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ message: 'Email and password required' });
+
+    const user = await User.findOne({ email });
+    if (!user || !user.password) return res.status(401).json({ message: 'Invalid email or password' });
+
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) return res.status(401).json({ message: 'Invalid email or password' });
+
+    const token = generateToken(user._id);
+    res.json({ token, user: userPublicFields(user) });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────
+// PATCH /api/auth/profile  (requires auth)
+// Complete/update user profile after signup
+// ─────────────────────────────────────────────
+router.patch('/profile', require('../middleware/auth'), async (req, res) => {
+  try {
+    const { name, phone, area, city } = req.body;
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if (name) user.name = name;
+    if (phone) user.phone = phone;
+    if (area) user.area = area;
+    if (city) user.city = city;
+
+    // Mark profile as complete if all required fields present
+    if (user.name && user.phone && user.area) {
+      user.profileComplete = true;
+    }
+
+    await user.save();
+    res.json({ user: userPublicFields(user) });
+  } catch (err) {
+    // Handle duplicate phone
+    if (err.code === 11000) return res.status(409).json({ message: 'Phone number already in use' });
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────
+// POST /api/auth/admin-login (phone + password)
+// ─────────────────────────────────────────────
 router.post('/admin-login', async (req, res) => {
   try {
     const { phone, password } = req.body;
     if (password !== process.env.ADMIN_PASSWORD && password !== 'admin123') {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
-    let admin = await User.findOne({ phone, role: 'admin' });
-    if (!admin) {
-      admin = await User.create({ phone, role: 'admin', name: 'Admin' });
+    let adminUser = await User.findOne({ phone, role: 'admin' });
+    if (!adminUser) {
+      adminUser = await User.create({ phone, role: 'admin', name: 'Admin', profileComplete: true });
     }
-    const token = generateToken(admin._id);
-    res.json({ token, user: { _id: admin._id, name: admin.name, phone: admin.phone, role: admin.role } });
+    const token = generateToken(adminUser._id);
+    res.json({ token, user: userPublicFields(adminUser) });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
+// ─────────────────────────────────────────────
 // GET /api/auth/me
+// ─────────────────────────────────────────────
 router.get('/me', require('../middleware/auth'), async (req, res) => {
-  res.json({ user: req.user });
+  res.json({ user: userPublicFields(req.user) });
 });
 
 module.exports = router;

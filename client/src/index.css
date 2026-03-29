@@ -1,6 +1,5 @@
-@import "tailwindcss";
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
 
 :root {
   --primary: #0EA5E9;
@@ -16,9 +15,9 @@
   --border: #E2E8F0;
   --gradient-primary: linear-gradient(135deg, #0EA5E9 0%, #6366F1 100%);
   --gradient-accent: linear-gradient(135deg, #A3E635 0%, #22D3EE 100%);
-  --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
-  --shadow-md: 0 4px 16px rgba(0,0,0,0.1);
-  --shadow-lg: 0 8px 32px rgba(14,165,233,0.15);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 32px rgba(14, 165, 233, 0.15);
 }
 
 * {
@@ -27,7 +26,9 @@
   padding: 0;
 }
 
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
   width: 100%;
 }
@@ -41,9 +42,18 @@ body {
 }
 
 /* Scrollbar */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 10px;
+}
 
 /* Glass card */
 .glass {
@@ -57,12 +67,17 @@ body {
   background: rgba(15, 23, 42, 0.7);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Gradients */
-.gradient-primary { background: var(--gradient-primary); }
-.gradient-accent { background: var(--gradient-accent); }
+.gradient-primary {
+  background: var(--gradient-primary);
+}
+
+.gradient-accent {
+  background: var(--gradient-accent);
+}
 
 /* Card */
 .card {
@@ -72,7 +87,11 @@ body {
   overflow: hidden;
   transition: all 0.3s ease;
 }
-.card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
 
 /* Pill button */
 .btn-primary {
@@ -87,8 +106,15 @@ body {
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
 }
-.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(14, 165, 233, 0.4); }
-.btn-primary:active { transform: translateY(0); }
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(14, 165, 233, 0.4);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
 
 .btn-accent {
   background: var(--accent);
@@ -101,7 +127,11 @@ body {
   cursor: pointer;
   transition: all 0.3s ease;
 }
-.btn-accent:hover { background: var(--accent-dark); transform: translateY(-2px); }
+
+.btn-accent:hover {
+  background: var(--accent-dark);
+  transform: translateY(-2px);
+}
 
 .btn-outline {
   background: transparent;
@@ -114,7 +144,11 @@ body {
   cursor: pointer;
   transition: all 0.3s ease;
 }
-.btn-outline:hover { background: var(--primary); color: white; }
+
+.btn-outline:hover {
+  background: var(--primary);
+  color: white;
+}
 
 /* Bottom nav pad */
 .has-bottom-nav {
@@ -128,18 +162,47 @@ body {
   animation: shimmer 1.5s infinite;
   border-radius: 12px;
 }
+
 @keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* Status badges */
-.badge-confirmed { background: #DCFCE7; color: #15803D; }
-.badge-pending { background: #FEF9C3; color: #854D0E; }
-.badge-cancelled { background: #FEE2E2; color: #991B1B; }
-.badge-completed { background: #DBEAFE; color: #1D4ED8; }
-.badge-verified { background: #D1FAE5; color: #065F46; }
-.badge-unverified { background: #FEE2E2; color: #991B1B; }
+.badge-confirmed {
+  background: #DCFCE7;
+  color: #15803D;
+}
+
+.badge-pending {
+  background: #FEF9C3;
+  color: #854D0E;
+}
+
+.badge-cancelled {
+  background: #FEE2E2;
+  color: #991B1B;
+}
+
+.badge-completed {
+  background: #DBEAFE;
+  color: #1D4ED8;
+}
+
+.badge-verified {
+  background: #D1FAE5;
+  color: #065F46;
+}
+
+.badge-unverified {
+  background: #FEE2E2;
+  color: #991B1B;
+}
 
 /* Input */
 .input {
@@ -154,21 +217,31 @@ body {
   transition: border 0.2s ease;
   outline: none;
 }
-.input:focus { border-color: var(--primary); }
-.input::placeholder { color: var(--text-muted); }
+
+.input:focus {
+  border-color: var(--primary);
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+}
 
 /* Selected card highlight (like reference image accent) */
 .selected-card {
   background: var(--accent) !important;
   color: #1a2e05 !important;
 }
-.selected-card * { color: #1a2e05 !important; }
+
+.selected-card * {
+  color: #1a2e05 !important;
+}
 
 /* Page transition */
 .page-enter {
   opacity: 0;
   transform: translateY(16px);
 }
+
 .page-enter-active {
   opacity: 1;
   transform: translateY(0);

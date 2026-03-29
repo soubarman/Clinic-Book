@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Star, MapPin, Clock, CheckCircle, Calendar, Ticket } from 'lucide-react';
+import { ArrowLeft, Star, MapPin, Clock, CheckCircle, Calendar, Ticket, LogIn } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import BottomNav from '../../components/BottomNav';
 import api from '../../lib/api';
+import { useAuth } from '../../context/AuthContext';
 
 const TIMES = ['09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM', '04:00 PM'];
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -32,12 +33,14 @@ function getNextDates() {
 export default function DoctorDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [doctor, setDoctor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
   const [booking, setBooking] = useState(false);
   const [booked, setBooked] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const dates = getNextDates();
 
   useEffect(() => {
@@ -48,21 +51,26 @@ export default function DoctorDetailPage() {
   }, [id]);
 
   const handleBook = async () => {
+    if (!user) {
+      setShowLoginPrompt(true);
+      return;
+    }
+    // If profile is incomplete, send to profile setup first
+    if (!user.profileComplete || !user.phone || !user.area) {
+      navigate('/profile-setup', { state: { from: `/doctors/${id}` } });
+      toast('Please complete your profile to book', { icon: '👤' });
+      return;
+    }
     if (!selectedDate || !selectedTime) return toast.error('Select date and time');
     setBooking(true);
     try {
-      // Create Razorpay order (mock)
       const orderRes = await api.post('/payments/create-order');
       const { order } = orderRes.data;
-
-      // Mock payment success
       await api.post('/payments/verify', {
         razorpay_order_id: order.id,
         razorpay_payment_id: 'mock_pay_' + Date.now(),
         razorpay_signature: 'mock_sig',
       });
-
-      // Create booking
       await api.post('/bookings', {
         doctorId: id,
         slotDate: selectedDate.date,
@@ -71,7 +79,6 @@ export default function DoctorDetailPage() {
         paymentId: 'mock_pay_' + Date.now(),
         razorpayOrderId: order.id,
       });
-
       setBooked(true);
       toast.success('🎉 Booking confirmed!');
     } catch (err) {
@@ -112,25 +119,28 @@ export default function DoctorDetailPage() {
   }) : [];
 
   return (
-    <div style={{ background: 'var(--surface)', minHeight: '100vh' }} className="has-bottom-nav">
+    <div style={{ background: 'var(--surface)', minHeight: '100vh', maxWidth: 420, margin: '0 auto' }} className="has-bottom-nav">
       {/* Header */}
       <div style={{
         background: 'linear-gradient(135deg,#0EA5E9,#6366F1)',
-        padding: '48px 20px 80px', position: 'relative',
+        padding: '40px 20px 80px', position: 'relative',
+        display: 'flex', alignItems: 'center', justifyContent: 'center'
       }}>
         <button onClick={() => navigate(-1)} style={{
-          width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.2)',
-          border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16,
+          position: 'absolute', left: 20, top: 40,
+          width: 38, height: 38, borderRadius: 12, background: 'rgba(255,255,255,0.2)',
+          border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          backdropFilter: 'blur(8px)',
         }}>
-          <ArrowLeft size={18} color="white" />
+          <ArrowLeft size={20} color="white" />
         </button>
-        <h1 style={{ color: 'white', fontWeight: 800, fontSize: 20 }}>Doctor Details</h1>
+        <h1 style={{ color: 'white', fontWeight: 800, fontSize: 18, fontFamily: 'Poppins, sans-serif' }}>Doctor Details</h1>
       </div>
 
       {/* Doctor Card (floating) */}
-      <div style={{ padding: '0 20px', marginTop: -50 }}>
+      <div style={{ padding: '0 20px', marginTop: -40, position: 'relative', zIndex: 10 }}>
         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-          style={{ background: 'white', borderRadius: 24, padding: 20, boxShadow: 'var(--shadow-lg)', marginBottom: 16 }}>
+          style={{ background: 'white', borderRadius: 24, padding: '24px 20px', boxShadow: '0 20px 48px rgba(0,0,0,0.1)', marginBottom: 16 }}>
           <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
             <div style={{
               width: 72, height: 72, borderRadius: '50%',
@@ -141,15 +151,15 @@ export default function DoctorDetailPage() {
               {getInitials(doctor?.name)}
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                <h2 style={{ fontWeight: 800, fontSize: 17 }}>{doctor?.name}</h2>
-              </div>
-              <p style={{ color: 'var(--primary)', fontWeight: 600, fontSize: 13 }}>{doctor?.specialization}</p>
+              <h2 style={{ fontWeight: 800, fontSize: 18, marginBottom: 2, color: 'var(--text-primary)' }}>{doctor?.name}</h2>
+              <p style={{ color: 'var(--primary)', fontWeight: 700, fontSize: 13, marginBottom: 2 }}>{doctor?.specialization}</p>
               <p style={{ color: 'var(--text-muted)', fontSize: 12 }}>{doctor?.qualification} • {doctor?.experience} yrs exp</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
-                <Star size={12} fill="#F59E0B" color="#F59E0B" />
-                <span style={{ fontSize: 12, fontWeight: 700 }}>{doctor?.rating?.toFixed(1)}</span>
-                <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>({doctor?.totalPatients} patients)</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#FEF3C7', padding: '2px 8px', borderRadius: 6 }}>
+                  <Star size={12} fill="#F59E0B" color="#F59E0B" />
+                  <span style={{ fontSize: 12, fontWeight: 800, color: '#92400E' }}>{doctor?.rating?.toFixed(1)}</span>
+                </div>
+                <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>({doctor?.totalPatients} patients)</span>
               </div>
             </div>
           </div>
@@ -277,6 +287,63 @@ export default function DoctorDetailPage() {
       </div>
 
       <BottomNav />
+
+      {/* Login Prompt Modal */}
+      <AnimatePresence>
+        {showLoginPrompt && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+              display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+              zIndex: 100, padding: '0 16px 24px',
+            }}
+            onClick={() => setShowLoginPrompt(false)}
+          >
+            <motion.div
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 100, opacity: 0 }}
+              onClick={e => e.stopPropagation()}
+              style={{
+                background: 'white', borderRadius: 28, padding: 28,
+                width: '100%', maxWidth: 420,
+                boxShadow: '0 -8px 40px rgba(0,0,0,0.15)',
+              }}
+            >
+              <div style={{ textAlign: 'center', marginBottom: 20 }}>
+                <div style={{
+                  width: 56, height: 56, borderRadius: '50%',
+                  background: 'linear-gradient(135deg,#0EA5E9,#6366F1)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  margin: '0 auto 12px',
+                }}>
+                  <LogIn size={26} color="white" />
+                </div>
+                <h3 style={{ fontWeight: 800, fontSize: 18, marginBottom: 6 }}>Sign in to Book</h3>
+                <p style={{ color: '#64748b', fontSize: 14, lineHeight: 1.6 }}>
+                  Create a free account or sign in to book your appointment with {doctor?.name}.
+                </p>
+              </div>
+              <button
+                className="btn-primary"
+                style={{ width: '100%', marginBottom: 10 }}
+                onClick={() => navigate('/login', { state: { from: `/doctors/${id}` } })}
+              >
+                Sign In / Sign Up
+              </button>
+              <button
+                onClick={() => setShowLoginPrompt(false)}
+                style={{ width: '100%', background: 'none', border: 'none', color: '#64748b', fontSize: 14, cursor: 'pointer', padding: '8px 0' }}
+              >
+                Continue Browsing
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
