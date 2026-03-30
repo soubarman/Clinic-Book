@@ -15,7 +15,8 @@ const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 router.get('/', async (req, res) => {
   try {
     const { city, search } = req.query;
-    const filter = { verified: true, active: true };
+    // Show all active clinics for now
+    const filter = { active: true };
     if (city) filter.city = new RegExp(city, 'i');
     if (search) filter.name = new RegExp(search, 'i');
 
@@ -48,7 +49,7 @@ router.post('/register', auth, upload.array('documents', 5), async (req, res) =>
     const documents = [];
     if (req.files && req.files.length > 0) {
       const bucket = admin.storage().bucket('clinic-booking-app-fe9f4.firebasestorage.app');
-      
+
       for (const file of req.files) {
         const fileName = `clinic_docs/${Date.now()}-${file.originalname.replace(/\s/g, '_')}`;
         const blob = bucket.file(fileName);

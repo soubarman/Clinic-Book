@@ -19,12 +19,8 @@ router.get('/', async (req, res) => {
       .populate('clinicId', 'name address city verified')
       .sort('-rating');
 
-    // Only show doctors in verified clinics (for public)
-    const filtered = doctors.filter(
-      (d) => d.clinicId && d.clinicId.verified
-    );
-
-    res.json({ doctors: filtered });
+    // Show all doctors for now (regardless of verification)
+    res.json({ doctors });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
