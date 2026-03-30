@@ -23,4 +23,9 @@ const clinicSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Faster Lookups by city and owner
+clinicSchema.index({ city: 1, verified: 1 });
+clinicSchema.index({ owner: 1 });
+clinicSchema.index({ name: 'text' }); // Allow text search for clinics
+
 module.exports = mongoose.model('Clinic', clinicSchema);

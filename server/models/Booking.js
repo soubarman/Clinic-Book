@@ -27,4 +27,10 @@ const bookingSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Optimizations for fast lookups
+bookingSchema.index({ userId: 1, createdAt: -1 }); // Fast user history
+bookingSchema.index({ doctorId: 1, slotDate: 1 }); // Fast doctor's daily view
+bookingSchema.index({ clinicId: 1 });
+bookingSchema.index({ razorpayOrderId: 1 }); // Fast payment verification
+
 module.exports = mongoose.model('Booking', bookingSchema);

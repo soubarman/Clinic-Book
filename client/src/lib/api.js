@@ -27,4 +27,20 @@ api.interceptors.response.use(
   }
 );
 
+// Simple in-memory session cache to prevent redundant API calls
+const cache = new Map();
+
+export const getCached = async (url, ttl = 60000) => {
+  const cached = cache.get(url);
+  if (cached && Date.now() - cached.timestamp < ttl) {
+    return cached.data;
+  }
+  const res = await api.get(url);
+  cache.set(url, { data: res.data, timestamp: Date.now() });
+  return res.data;
+};
+
+// Clear cache (useful for logout or force refresh)
+export const clearCache = () => cache.clear();
+
 export default api;

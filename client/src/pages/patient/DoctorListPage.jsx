@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import DoctorCard from '../../components/DoctorCard';
 import { DoctorCardSkeleton } from '../../components/Skeletons';
 import BottomNav from '../../components/BottomNav';
-import api from '../../lib/api';
+import api, { getCached } from '../../lib/api';
 
 const SPECS = ['All', 'Cardiologist', 'Neurologist', 'Dermatologist', 'Psychiatrist', 'Orthopedic', 'Pediatrician', 'General Physician', 'ENT Specialist', 'Nephrologist'];
 
@@ -27,11 +27,12 @@ export default function DoctorListPage() {
   }, [clinicId]);
 
   const loadDoctors = async () => {
-    setLoading(true);
+    // Only show full loading if we have no data at all
+    if (doctors.length === 0) setLoading(true);
     try {
       const query = clinicId ? `?clinicId=${clinicId}` : '';
-      const res = await api.get(`/doctors${query}`);
-      setDoctors(res.data.doctors || []);
+      const data = await getCached(`/doctors${query}`, 300000); // 5 min TTL
+      setDoctors(data.doctors || []);
     } catch (err) {
       console.error(err);
     } finally {

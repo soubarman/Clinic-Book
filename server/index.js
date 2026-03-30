@@ -6,13 +6,16 @@ if (admin.apps.length === 0) {
   admin.initializeApp();
 }
 
-const app = require('./server');
-
-// Standard Cloud Function export for Express
+// Standard Cloud Function export for Express (Lazy Loaded to avoid CLI timeouts)
 exports.api = onRequest({
   region: 'us-central1',
   memory: '256MiB',
   timeoutSeconds: 60,
-  minInstances: 0,
+  minInstances: 1, // Zero cold starts
+  maxInstances: 50, // Auto-scale to huge traffic
+  concurrency: 80, // High throughput handling
   cors: true, // Handle CORS at the Firebase level
-}, app);
+}, (req, res) => {
+  const app = require('./server');
+  return app(req, res);
+});

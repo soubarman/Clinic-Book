@@ -7,7 +7,7 @@ import BottomNav from '../../components/BottomNav';
 import DoctorCard from '../../components/DoctorCard';
 import { DoctorCardSkeleton, ClinicCardSkeleton } from '../../components/Skeletons';
 import { useAuth } from '../../context/AuthContext';
-import api from '../../lib/api';
+import api, { getCached } from '../../lib/api';
 
 const SPECIALIZATIONS = ['All', 'Cardiologist', 'Neurologist', 'Dermatologist', 'Pediatrician', 'Psychiatrist', 'General Physician', 'Orthopedic'];
 
@@ -26,15 +26,16 @@ export default function HomePage() {
 
   const loadData = async () => {
     try {
-      const [docRes, clinicRes] = await Promise.all([
-        api.get('/doctors'),
-        api.get('/clinics'),
+      // Use cache for instant loading, TTL of 5 mins for home data
+      const [docData, clinicData] = await Promise.all([
+        getCached('/doctors', 300000),
+        getCached('/clinics', 300000),
       ]);
-      setDoctors(docRes.data.doctors || []);
-      setClinics(clinicRes.data.clinics || []);
+      setDoctors(docData.doctors || []);
+      setClinics(clinicData.clinics || []);
     } catch (err) {
       console.error(err);
-      toast.error(err.response?.data?.message || err.message || 'Failed to load doctors');
+      toast.error('Failed to load data');
     } finally {
       setLoading(false);
     }

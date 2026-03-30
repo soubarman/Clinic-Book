@@ -25,4 +25,10 @@ const doctorSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Index for performance
+doctorSchema.index({ specialization: 1 });
+doctorSchema.index({ clinicId: 1 });
+doctorSchema.index({ name: 'text' }); // Allow search by name
+doctorSchema.index({ clinicId: 1, specialization: 1 }); // Common compound query
+
 module.exports = mongoose.model('Doctor', doctorSchema);
