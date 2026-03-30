@@ -46,21 +46,20 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', mode: 'mongodb', time: new Date().toISOString() });
 });
 
-// MongoDB Connection
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log('✅ MongoDB Atlas connected');
-    app.listen(process.env.PORT || 5000, () => {
-      console.log(`🚀 Server running on http://localhost:${process.env.PORT || 5000}`);
-      console.log('');
-      console.log('📌 Run seed: node scripts/seed.js');
+// MongoDB Connection & Listen (Only if run directly, not in Functions)
+if (require.main === module) {
+  const connectDB = require('./config/db');
+  connectDB()
+    .then(() => {
+      const port = process.env.LOCAL_PORT || 5000;
+      app.listen(port, () => {
+        console.log(`🚀 Dedicated server running on http://localhost:${port}`);
+      });
+    })
+    .catch((err) => {
+      console.error('❌ Failed to start standalone server:', err.message);
+      process.exit(1);
     });
-  })
-  .catch((err) => {
-    console.error('❌ MongoDB connection failed:', err.message);
-    console.error('👉 Check your MONGO_URI in server/.env');
-    process.exit(1);
-  });
+}
 
 module.exports = app;

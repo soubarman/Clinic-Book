@@ -7,11 +7,8 @@ const User = require('../models/User');
 const auth = require('../middleware/auth');
 const roleGuard = require('../middleware/roleGuard');
 
-const storage = multer.diskStorage({
-  destination: 'uploads/',
-  filename: (req, file, cb) =>
-    cb(null, Date.now() + '-' + file.originalname.replace(/\s/g, '_')),
-});
+const admin = require('firebase-admin');
+const storage = multer.memoryStorage();
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
 // GET /api/clinics — public listing of verified clinics
@@ -47,7 +44,33 @@ router.post('/register', auth, upload.array('documents', 5), async (req, res) =>
     const existing = await Clinic.findOne({ owner: req.user._id });
     if (existing) return res.status(400).json({ message: 'You already have a clinic registered' });
 
-    const documents = req.files ? req.files.map((f) => `/uploads/${f.filename}`) : [];
+    // Upload to Firebase Storage
+    const documents = [];
+    if (req.files && req.files.length > 0) {
+      const bucket = admin.storage().bucket('clinic-booking-app-fe9f4.firebasestorage.app');
+      
+      for (const file of req.files) {
+        const fileName = `clinic_docs/${Date.now()}-${file.originalname.replace(/\s/g, '_')}`;
+        const blob = bucket.file(fileName);
+        const blobStream = blob.createWriteStream({
+          metadata: { contentType: file.mimetype },
+          resumable: false,
+        });
+
+        await new Promise((resolve, reject) => {
+          blobStream.on('error', reject);
+          blobStream.on('finish', async () => {
+            // Make public and get URL
+            await blob.makePublic();
+            const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+            documents.push(publicUrl);
+            resolve();
+          });
+          blobStream.end(file.buffer);
+        });
+      }
+    }
+
     const clinic = await Clinic.create({
       name, address, city: city || 'Sivasagar', phone, email, description,
       documents, owner: req.user._id, verified: false,
