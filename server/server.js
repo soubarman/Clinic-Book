@@ -34,15 +34,15 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/clinics', require('./routes/clinics'));
-app.use('/api/doctors', require('./routes/doctors'));
-app.use('/api/bookings', require('./routes/bookings'));
-app.use('/api/payments', require('./routes/payments'));
-app.use('/api/admin', require('./routes/admin'));
+app.use('/auth', require('./routes/auth'));
+app.use('/clinics', require('./routes/clinics'));
+app.use('/doctors', require('./routes/doctors'));
+app.use('/bookings', require('./routes/bookings'));
+app.use('/payments', require('./routes/payments'));
+app.use('/admin', require('./routes/admin'));
 
 // Smart Health check
-app.get('/api/health', async (req, res) => {
+app.get('/health', async (req, res) => {
   try {
     const Doctor = require('./models/Doctor');
     const Clinic = require('./models/Clinic');
