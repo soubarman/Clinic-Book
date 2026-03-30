@@ -78,10 +78,10 @@ router.put('/clinics/:id/toggle', ...adminGuard, async (req, res) => {
   }
 });
 
-// GET /api/admin/users
+// GET /api/admin/users — only show non-admins
 router.get('/users', ...adminGuard, async (req, res) => {
   try {
-    const users = await User.find().select('-otp -otpExpiry').sort('-createdAt');
+    const users = await User.find({ role: { $ne: 'admin' } }).select('-otp -otpExpiry').sort('-createdAt');
     res.json({ users });
   } catch (err) {
     res.status(500).json({ message: err.message });

@@ -153,7 +153,9 @@ router.patch('/profile', require('../middleware/auth'), async (req, res) => {
 router.post('/admin-login', async (req, res) => {
   try {
     const { phone, password } = req.body;
-    if (password !== process.env.ADMIN_PASSWORD && password !== 'admin123') {
+    // Strictly use environment variable for admin password
+    const secureAdminPassword = process.env.ADMIN_PASSWORD;
+    if (!secureAdminPassword || password !== secureAdminPassword) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
     let adminUser = await User.findOne({ phone, role: 'admin' });

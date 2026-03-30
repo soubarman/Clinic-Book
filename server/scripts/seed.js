@@ -1,28 +1,13 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-dotenv.config({ path: require('path').join(__dirname, '../.env') });
-
 const User = require('../models/User');
 const Clinic = require('../models/Clinic');
 const Doctor = require('../models/Doctor');
 const Booking = require('../models/Booking');
 
+dotenv.config({ path: require('path').join(__dirname, '../.env') });
+
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/clinic_booking';
-
-const specializations = ['Cardiologist', 'Neurologist', 'Dermatologist', 'Psychiatrist', 'Orthopedic', 'Pediatrician', 'General Physician', 'ENT Specialist', 'Nephrologist', 'Endocrinologist'];
-
-const doctorNames = [
-  'Dr. Arun Kumar', 'Dr. Priya Sharma', 'Dr. Rajesh Bora', 'Dr. Meenakshi Das',
-  'Dr. Bikash Gogoi', 'Dr. Sima Phukan', 'Dr. Tarun Barua', 'Dr. Nandita Roy',
-  'Dr. Hiren Kalita', 'Dr. Ankita Baruah', 'Dr. Manash Das', 'Dr. Rekha Borah',
-];
-
-const clinicData = [
-  { name: 'Apollo Clinic Sivasagar', address: 'AT Road, Sivasagar, Assam', city: 'Sivasagar', phone: '9876543210', description: 'Leading multi-specialty clinic in Sivasagar', specializations: ['Cardiology', 'Neurology', 'General'], rating: 4.8 },
-  { name: 'City Health Center', address: 'Nehru Park Road, Sivasagar', city: 'Sivasagar', phone: '9876543211', description: 'Affordable healthcare for all', specializations: ['Pediatrics', 'Dermatology'], rating: 4.5 },
-  { name: 'Guwahati Medical Hub', address: 'GS Road, Guwahati, Assam', city: 'Guwahati', phone: '9876543212', description: 'State-of-the-art facilities', specializations: ['Orthopedics', 'ENT', 'Psychiatry'], rating: 4.7 },
-  { name: 'Prime Care Clinic', address: 'Chandmari, Guwahati', city: 'Guwahati', phone: '9876543213', description: 'Trusted family healthcare since 2010', specializations: ['General', 'Endocrinology'], rating: 4.6 },
-];
 
 const defaultSlots = [
   { day: 'Mon', startTime: '09:00', endTime: '13:00', maxPatients: 20 },
@@ -34,105 +19,129 @@ const defaultSlots = [
 ];
 
 async function seed() {
+  // Safety check for production
+  if (process.env.NODE_ENV === 'production' && !process.argv.includes('--force')) {
+    console.error('❌ ERROR: Prevented seeding production database. Use --force if you are sure.');
+    process.exit(1);
+  }
+
   try {
     await mongoose.connect(MONGO_URI);
     console.log('✅ Connected to MongoDB');
 
-    // Drop all collections (removes stale indexes too)
-    const db = mongoose.connection.db;
-    const collections = await db.listCollections().toArray();
-    for (const col of collections) {
-      await db.collection(col.name).drop().catch(() => {}); // ignore "ns not found"
-    }
-    console.log('🗑️  Cleared existing data & indexes');
-
-    // Create admin
-    const admin = await User.create({ name: 'Admin', phone: '9999999999', role: 'admin' });
-    console.log('👤 Admin created');
-
-    // Create patient users
-    const patients = await User.insertMany([
-      { name: 'Rahul Borgohain', phone: '9000000001', role: 'patient' },
-      { name: 'Priya Devi', phone: '9000000002', role: 'patient' },
-      { name: 'Amit Saikia', phone: '9000000003', role: 'patient' },
-      { name: 'Sunita Kalita', phone: '9000000004', role: 'patient' },
+    // Wipe existing data
+    await Promise.all([
+      User.deleteMany({}),
+      Clinic.deleteMany({}),
+      Doctor.deleteMany({}),
+      Booking.deleteMany({})
     ]);
-    console.log(`👥 ${patients.length} patients created`);
+    console.log('🗑️  Cleared existing data');
 
-    // Create clinic owners
-    const clinicOwners = await User.insertMany(
-      clinicData.map((_, i) => ({ name: `Clinic Owner ${i + 1}`, phone: `900000100${i + 1}`, role: 'clinic' }))
-    );
+    // 1. Create Initial Admin (from env for security)
+    const adminPhone = process.env.ADMIN_PHONE || '9999999999';
+    const adminName = process.env.ADMIN_NAME || 'Super Admin';
+    
+    console.log(`👤 Creating Admin (${adminName})...`);
+    await User.create({ 
+      name: adminName, 
+      phone: adminPhone, 
+      role: 'admin', 
+      profileComplete: true 
+    });
 
-    // Create clinics (verified)
-    const clinics = await Clinic.insertMany(
-      clinicData.map((c, i) => ({ ...c, owner: clinicOwners[i]._id, verified: true, active: true, totalBookings: Math.floor(Math.random() * 200) }))
-    );
+    // 2. Create Patients
+    console.log('👥 Creating Patients...');
+    const patients = await User.insertMany([
+      { name: 'Rahul Borgohain', phone: '8000000001', role: 'patient', profileComplete: true },
+      { name: 'Priya Devi', phone: '8000000002', role: 'patient', profileComplete: true }
+    ]);
 
-    // Update clinic owner users with clinicId
-    for (let i = 0; i < clinics.length; i++) {
-      await User.findByIdAndUpdate(clinicOwners[i]._id, { clinicId: clinics[i]._id });
-    }
-    console.log(`🏥 ${clinics.length} clinics created`);
+    // 3. Create Clinic Owners & Clinics (Variety of statuses)
+    console.log('🏥 Creating Clinics (Verified, Pending, Rejected)...');
+    
+    // Verified Clinic
+    const ownerVerified = await User.create({ name: 'Verified Owner', phone: '9111111111', role: 'clinic', profileComplete: true });
+    const clinicVerified = await Clinic.create({
+      name: 'City Health Center (Verified)',
+      address: 'AT Road, Sivasagar', phone: '9111111112',
+      owner: ownerVerified._id, verified: true, active: true
+    });
+    await User.findByIdAndUpdate(ownerVerified._id, { clinicId: clinicVerified._id });
 
-    // Create doctors (3 per clinic)
-    const doctors = [];
-    for (let i = 0; i < clinics.length; i++) {
-      for (let j = 0; j < 3; j++) {
-        const nameIdx = i * 3 + j;
-        const spec = specializations[(i * 3 + j) % specializations.length];
-        doctors.push({
-          clinicId: clinics[i]._id,
-          name: doctorNames[nameIdx] || `Dr. Doctor ${nameIdx + 1}`,
-          specialization: spec,
-          qualification: ['MBBS', 'MD', 'MS', 'MBBS, DM'][Math.floor(Math.random() * 4)],
-          experience: Math.floor(Math.random() * 15) + 2,
-          fee: [300, 400, 500, 600, 700, 800][Math.floor(Math.random() * 6)],
-          rating: parseFloat((4.0 + Math.random() * 1).toFixed(1)),
-          totalPatients: Math.floor(Math.random() * 500),
-          slots: defaultSlots,
-          available: true,
-        });
+    // Pending Clinic
+    const ownerPending = await User.create({ name: 'Pending Owner', phone: '9222222222', role: 'clinic', profileComplete: true });
+    const clinicPending = await Clinic.create({
+      name: 'New Life Clinic (Pending)',
+      address: 'Jail Road, Sivasagar', phone: '9222222223',
+      owner: ownerPending._id, verified: false, active: true
+    });
+    await User.findByIdAndUpdate(ownerPending._id, { clinicId: clinicPending._id });
+
+    // Rejected Clinic
+    const ownerRejected = await User.create({ name: 'Rejected Owner', phone: '9333333333', role: 'clinic', profileComplete: true });
+    const clinicRejected = await Clinic.create({
+      name: 'Problem Clinic (Rejected)',
+      address: 'Old Station, Sivasagar', phone: '9333333334',
+      owner: ownerRejected._id, verified: false, active: true,
+      rejectionDate: new Date(),
+      adminNote: 'Documents are expired. Please upload valid proof of clinic ownership.'
+    });
+    await User.findByIdAndUpdate(ownerRejected._id, { clinicId: clinicRejected._id });
+
+    // 4. Create Doctors (only for verified clinic)
+    console.log('👨‍⚕️ Creating Doctors...');
+    const doctors = await Doctor.insertMany([
+      {
+        clinicId: clinicVerified._id,
+        name: 'Dr. Arun Kumar',
+        specialization: 'Cardiologist',
+        qualification: 'MBBS, MD (Cardio)',
+        experience: 12,
+        fee: 500,
+        rating: 4.8,
+        totalPatients: 150,
+        slots: defaultSlots,
+        available: true,
+      },
+      {
+        clinicId: clinicVerified._id,
+        name: 'Dr. Priya Sharma',
+        specialization: 'Pediatrician',
+        qualification: 'MBBS, DCH',
+        experience: 8,
+        fee: 400,
+        rating: 4.5,
+        totalPatients: 210,
+        slots: defaultSlots,
+        available: true,
       }
-    }
+    ]);
 
-    const createdDoctors = await Doctor.insertMany(doctors);
-    console.log(`👨‍⚕️ ${createdDoctors.length} doctors created`);
+    // 5. Create Sample Bookings
+    console.log('📅 Creating Sample Bookings...');
+    const todayStr = new Date().toISOString().split('T')[0];
+    await Booking.create({
+      userId: patients[0]._id,
+      doctorId: doctors[0]._id,
+      clinicId: clinicVerified._id,
+      slotDate: todayStr,
+      slotDay: 'Mon',
+      slotTime: '10:00 AM',
+      tokenNumber: 1,
+      status: 'confirmed',
+      paymentStatus: 'paid',
+      platformFee: 20
+    });
 
-    // Create sample bookings
-    const today = new Date();
-    const bookings = [];
-    const statuses = ['confirmed', 'completed', 'completed', 'cancelled', 'confirmed'];
-    for (let i = 0; i < 10; i++) {
-      const date = new Date(today);
-      date.setDate(date.getDate() + (i % 3) - 1);
-      const doctor = createdDoctors[i % createdDoctors.length];
-      const patient = patients[i % patients.length];
-      const status = statuses[i % statuses.length];
-      bookings.push({
-        userId: patient._id,
-        doctorId: doctor._id,
-        clinicId: doctor.clinicId,
-        slotDate: date.toISOString().split('T')[0],
-        slotDay: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'][date.getDay() % 5],
-        slotTime: ['09:00 AM', '10:00 AM', '11:00 AM', '02:00 PM'][i % 4],
-        tokenNumber: i + 1,
-        status,
-        paymentStatus: status !== 'cancelled' ? 'paid' : 'pending',
-        paymentId: status !== 'cancelled' ? `mock_pay_${Date.now()}_${i}` : '',
-        platformFee: 20,
-      });
-    }
-
-    await Booking.insertMany(bookings);
-    console.log(`📅 ${bookings.length} bookings created`);
-
-    console.log('\n✅ Seed complete!');
+    console.log('\n✅ Seed Complete!');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('Test Credentials:');
-    console.log('  Admin    → Phone: 9999999999, Password: admin123');
-    console.log('  Patient  → Phone: 9000000001, OTP: 123456');
-    console.log('  Clinic   → Phone: 9000000001X (owner phones)');
+    console.log(`  Admin    → Phone: ${adminPhone}`);
+    console.log('  Verified → Phone: 9111111111');
+    console.log('  Pending  → Phone: 9222222222');
+    console.log('  Rejected → Phone: 9333333333');
+    console.log('  Patient  → Phone: 8000000001');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     process.exit(0);
