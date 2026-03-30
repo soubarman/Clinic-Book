@@ -1,27 +1,18 @@
 const { onRequest } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
-const connectDB = require('./config/db');
 
-// Initialize Firebase Admin (Only if not already initialized)
+// Initialize Firebase Admin (Required BEFORE importing app)
 if (admin.apps.length === 0) {
   admin.initializeApp();
 }
 
 const app = require('./server');
 
-// Cloud Function export
+// Standard Cloud Function export for Express
 exports.api = onRequest({
-  region: 'us-central1', // Update based on your preferred region
+  region: 'us-central1',
   memory: '256MiB',
   timeoutSeconds: 60,
   minInstances: 0,
-}, async (req, res) => {
-  try {
-    // Ensure MongoDB is connected before handling the request
-    await connectDB();
-    return app(req, res);
-  } catch (err) {
-    console.error('❌ Cloud Function Internal Error:', err.message);
-    res.status(500).json({ message: 'Internal Server Error (DB)' });
-  }
-});
+  cors: true, // Handle CORS at the Firebase level
+}, app);

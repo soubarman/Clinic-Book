@@ -275,16 +275,29 @@ export default function DoctorDetailPage() {
       </div>
 
       {/* Sticky CTA */}
-      <div style={{ position: 'fixed', bottom: 70, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 600, padding: '0 20px', zIndex: 40 }}>
-        <button className="btn-primary" style={{
-          width: '100%', fontSize: 16, padding: '16px',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          opacity: selectedDate && selectedTime ? 1 : 0.5,
-        }}
-          onClick={handleBook} disabled={!selectedDate || !selectedTime || booking}>
-          <Ticket size={18} />
-          {booking ? 'Processing...' : 'Book Ticket — ₹20'}
-        </button>
+      <div style={{ 
+        position: 'fixed', 
+        bottom: 86, 
+        left: '50%', 
+        transform: 'translateX(-50%)', 
+        width: '100%', 
+        maxWidth: 600, 
+        padding: '0 20px', 
+        zIndex: 40,
+        pointerEvents: 'none' // container shouldn't block clicks to things behind it
+      }}>
+        <div style={{ pointerEvents: 'auto' }}>
+          <button className="btn-primary" style={{
+            width: '100%', fontSize: 16, padding: '16px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            boxShadow: '0 10px 30px rgba(13,165,233,0.4)',
+            opacity: selectedDate && selectedTime ? 1 : 0.5,
+          }}
+            onClick={handleBook} disabled={!selectedDate || !selectedTime || booking}>
+            <Ticket size={18} />
+            {booking ? 'Processing...' : 'Book Ticket — ₹20'}
+          </button>
+        </div>
       </div>
 
       <BottomNav />
