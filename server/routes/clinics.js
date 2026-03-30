@@ -138,7 +138,7 @@ router.put('/:id', auth, roleGuard('clinic', 'admin'), async (req, res) => {
 });
 
 // GET /api/clinics/mine — get logged-in clinic user's clinic
-router.get('/mine/info', auth, roleGuard('clinic', 'admin'), async (req, res) => {
+router.get('/mine/info', auth, async (req, res) => {
   try {
     const clinic = await Clinic.findOne({ owner: req.user._id });
     if (!clinic) return res.status(404).json({ message: 'No clinic found for this account' });
