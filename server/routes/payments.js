@@ -32,8 +32,11 @@ router.post('/verify', auth, async (req, res) => {
 
     // Mock mode: always succeed
     if (process.env.OTP_MOCK === 'true') {
+      console.log('✅ Payment verification: MOCK MODE ACTIVE');
       return res.json({ verified: true, paymentId: razorpay_payment_id || 'mock_pay_' + Date.now() });
     }
+
+    console.log('🔍 Payment verification: REAL MODE. Checking signature...');
 
     // Production signature verification
     const body = razorpay_order_id + '|' + razorpay_payment_id;

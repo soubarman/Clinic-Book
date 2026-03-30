@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -51,11 +52,14 @@ export default function LoginPage() {
   const handleEmailAuth = async () => {
     if (!email.trim()) return toast.error('Enter your email');
     if (password.length < 6) return toast.error('Password must be at least 6 characters');
-    if (mode === 'signup' && !name.trim()) return toast.error('Enter your name');
+    if (mode === 'signup') {
+      if (!name.trim()) return toast.error('Enter your name');
+      if (phone.length < 10) return toast.error('Enter a valid 10-digit phone number');
+    }
     setLoading(true);
     try {
       const endpoint = mode === 'signup' ? '/auth/email-signup' : '/auth/email-login';
-      const payload = mode === 'signup' ? { email, password, name } : { email, password };
+      const payload = mode === 'signup' ? { email, password, name, phone } : { email, password };
       const res = await api.post(endpoint, payload);
       toast.success(mode === 'signup' ? 'Account created!' : 'Welcome back!');
       handleAfterLogin(res.data.token, res.data.user);
@@ -185,15 +189,21 @@ export default function LoginPage() {
                   ))}
                 </div>
 
-                {/* Name (signup only) */}
+                {/* Name & Phone (signup only) */}
                 <AnimatePresence>
                   {mode === 'signup' && (
-                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}>
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: 'hidden' }}>
                       <div style={{ position: 'relative', marginBottom: 12 }}>
                         <User size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
                         <input className="input" placeholder="Your full name" value={name}
                           onChange={e => setName(e.target.value)}
                           style={{ paddingLeft: 40 }} />
+                      </div>
+                      <div style={{ position: 'relative', marginBottom: 12 }}>
+                        <div style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: 13, fontWeight: 700 }}>+91</div>
+                        <input className="input" type="tel" placeholder="Phone number" value={phone}
+                          onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                          style={{ paddingLeft: 46 }} />
                       </div>
                     </motion.div>
                   )}

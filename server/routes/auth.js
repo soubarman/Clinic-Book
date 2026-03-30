@@ -65,20 +65,29 @@ router.post('/google-login', async (req, res) => {
 // ─────────────────────────────────────────────
 router.post('/email-signup', async (req, res) => {
   try {
-    const { email, password, name } = req.body;
-    if (!email || !password) return res.status(400).json({ message: 'Email and password required' });
+    const { email, password, name, phone } = req.body;
+    if (!email || !password || !phone) {
+      return res.status(400).json({ message: 'Email, password, and phone number are required' });
+    }
     if (password.length < 6) return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    if (phone.length < 10) return res.status(400).json({ message: 'Valid phone number is required' });
 
-    const existing = await User.findOne({ email });
-    if (existing) return res.status(409).json({ message: 'Email already registered. Please sign in.' });
+    const existing = await User.findOne({ 
+      $or: [{ email }, { phone }] 
+    });
+    if (existing) {
+      const field = existing.email === email ? 'Email' : 'Phone number';
+      return res.status(409).json({ message: `${field} already registered.` });
+    }
 
     const hashed = await bcrypt.hash(password, 10);
     const user = await User.create({
       email,
+      phone,
       password: hashed,
       name: name || '',
       role: 'patient',
-      profileComplete: false,
+      profileComplete: !!(name && phone),
     });
 
     const token = generateToken(user._id);
