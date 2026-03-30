@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import api from '../../lib/api';
 
-const TABS = ['All', 'Pending', 'Verified'];
+const TABS = ['All', 'Pending', 'Verified', 'Rejected'];
 
 export default function ManageClinicsPage() {
   const navigate = useNavigate();
@@ -18,8 +18,14 @@ export default function ManageClinicsPage() {
   }, []);
 
   const handleVerify = async (id, verified) => {
+    let adminNote = '';
+    if (!verified) {
+      adminNote = prompt('Reason for rejection?');
+      if (!adminNote) return; // Cancel if no reason given
+    }
+
     try {
-      const res = await api.put(`/admin/clinics/${id}/verify`, { verified });
+      const res = await api.put(`/admin/clinics/${id}/verify`, { verified, adminNote });
       setClinics(prev => prev.map(c => c._id === id ? res.data.clinic : c));
       toast.success(res.data.message);
     } catch (err) { toast.error('Failed to update'); }
@@ -35,8 +41,9 @@ export default function ManageClinicsPage() {
 
   const filtered = clinics.filter(c => {
     if (tab === 'All') return true;
-    if (tab === 'Pending') return !c.verified;
+    if (tab === 'Pending') return !c.verified && !c.rejectionDate;
     if (tab === 'Verified') return c.verified;
+    if (tab === 'Rejected') return !c.verified && c.rejectionDate;
     return true;
   });
 
@@ -79,10 +86,10 @@ export default function ManageClinicsPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                       <p style={{ fontWeight: 800, fontSize: 15 }}>{clinic.name}</p>
                       <span style={{
-                        background: clinic.verified ? '#DCFCE7' : '#FEF9C3',
-                        color: clinic.verified ? '#15803D' : '#854D0E',
+                        background: clinic.verified ? '#DCFCE7' : clinic.rejectionDate ? '#FEE2E2' : '#FEF9C3',
+                        color: clinic.verified ? '#15803D' : clinic.rejectionDate ? '#991B1B' : '#854D0E',
                         borderRadius: 100, padding: '2px 8px', fontSize: 10, fontWeight: 700,
-                      }}>{clinic.verified ? '✅ Verified' : '⏳ Pending'}</span>
+                      }}>{clinic.verified ? '✅ Verified' : clinic.rejectionDate ? '❌ Rejected' : '⏳ Pending'}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}>
                       <MapPin size={11} color="var(--text-muted)" />
@@ -102,9 +109,17 @@ export default function ManageClinicsPage() {
 
                 {/* Owner */}
                 {clinic.owner && (
-                  <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>
+                  <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>
                     Owner: <strong>{clinic.owner.name}</strong> · {clinic.owner.phone}
                   </p>
+                )}
+
+                {clinic.rejectionDate && (
+                  <div style={{ background: '#FFF7ED', border: '1px solid #FFEDD5', borderRadius: 12, padding: '10px 12px', marginBottom: 12 }}>
+                    <p style={{ fontSize: 11, color: '#C2410C', fontWeight: 700, marginBottom: 2 }}>Rejection Remark:</p>
+                    <p style={{ fontSize: 12, color: '#9A3412' }}>{clinic.adminNote || 'No reason provided'}</p>
+                    <p style={{ fontSize: 10, color: '#C2410C', marginTop: 4, opacity: 0.7 }}>Rejected on: {new Date(clinic.rejectionDate).toLocaleDateString()}</p>
+                  </div>
                 )}
 
                 {/* Actions */}

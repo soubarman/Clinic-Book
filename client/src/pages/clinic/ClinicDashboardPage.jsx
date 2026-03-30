@@ -86,23 +86,45 @@ export default function ClinicDashboardPage() {
       </div>
 
       <div style={{ padding: '20px' }}>
-        {/* Unverified Banner */}
-        {!loading && clinic && !clinic.verified && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
-            style={{ 
-              background: '#FEF2F2', border: '1px solid #FCA5A5', 
-              borderRadius: 20, padding: 20, marginBottom: 24,
-              display: 'flex', gap: 16, alignItems: 'flex-start'
-            }}>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <span style={{ fontSize: 24 }}>⏳</span>
-            </div>
-            <div>
-              <h3 style={{ fontWeight: 800, fontSize: 15, color: '#991B1B', marginBottom: 4 }}>Pending Verification</h3>
-              <p style={{ fontSize: 12, color: '#B91C1C', lineHeight: 1.6 }}>
-                Your clinic is currently hidden from patients. Our team is reviewing your documents. You can still view your dashboard, but you won't be able to manage doctors until verified.
-              </p>
-            </div>
+        {/* Status Banners */}
+        {!loading && clinic && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}>
+            {clinic.rejectionDate && !clinic.verified ? (
+              <div style={{ 
+                background: '#FEF2F2', border: '1px solid #FCA5A5', 
+                borderRadius: 20, padding: 20, marginBottom: 24,
+                display: 'flex', gap: 16, alignItems: 'flex-start'
+              }}>
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <span style={{ fontSize: 24 }}>❌</span>
+                </div>
+                <div>
+                  <h3 style={{ fontWeight: 800, fontSize: 15, color: '#991B1B', marginBottom: 4 }}>Clinic Registration Rejected</h3>
+                  <p style={{ fontSize: 12, color: '#B91C1C', lineHeight: 1.6, marginBottom: 8 }}>
+                    <strong>Admin Remark:</strong> {clinic.adminNote || 'No specific reason provided.'}
+                  </p>
+                  <p style={{ fontSize: 11, color: '#991B1B', opacity: 0.8 }}>
+                    You can update your details and reapply after 24 hours from the rejection date ({new Date(clinic.rejectionDate).toLocaleString()}).
+                  </p>
+                </div>
+              </div>
+            ) : !clinic.verified ? (
+              <div style={{ 
+                background: '#FFFBEB', border: '1px solid #FCD34D', 
+                borderRadius: 20, padding: 20, marginBottom: 24,
+                display: 'flex', gap: 16, alignItems: 'flex-start'
+              }}>
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <span style={{ fontSize: 24 }}>⏳</span>
+                </div>
+                <div>
+                  <h3 style={{ fontWeight: 800, fontSize: 15, color: '#92400E', marginBottom: 4 }}>Pending Verification</h3>
+                  <p style={{ fontSize: 12, color: '#B45309', lineHeight: 1.6 }}>
+                    Your clinic is currently hidden from patients. Our team is reviewing your documents. You can still view your dashboard, but you won't be able to manage doctors until verified.
+                  </p>
+                </div>
+              </div>
+            ) : null}
           </motion.div>
         )}
 

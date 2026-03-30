@@ -42,10 +42,27 @@ router.get('/:id', async (req, res) => {
 router.post('/register', auth, upload.array('documents', 5), async (req, res) => {
   try {
     const { name, address, city, phone, email, description } = req.body;
-    const existing = await Clinic.findOne({ owner: req.user._id });
-    if (existing) return res.status(400).json({ message: 'You already have a clinic registered' });
+    let clinic = await Clinic.findOne({ owner: req.user._id });
+    
+    if (clinic) {
+      if (clinic.verified) return res.status(400).json({ message: 'You already have a verified clinic' });
+      
+      // Check 24h rejection rule
+      if (clinic.rejectionDate) {
+        const hoursSinceRejection = (new Date() - new Date(clinic.rejectionDate)) / (1000 * 60 * 60);
+        if (hoursSinceRejection < 24) {
+          const hoursLeft = Math.ceil(24 - hoursSinceRejection);
+          return res.status(403).json({ 
+            message: `Reapplication blocked: Your clinic was recently rejected. Please wait ${hoursLeft} hours before reapplying.` 
+          });
+        }
+      }
+      
+      // If we are here, either it was rejected > 24h ago or it's still pending but they want to update details.
+      // We will update the existing record.
+    }
 
-    // Upload to Firebase Storage
+    // Process documents (same as before)
     const documents = [];
     if (req.files && req.files.length > 0) {
       const bucket = admin.storage().bucket('clinic-booking-app-fe9f4.firebasestorage.app');
@@ -72,12 +89,26 @@ router.post('/register', auth, upload.array('documents', 5), async (req, res) =>
       }
     }
 
-    const clinic = await Clinic.create({
-      name, address, city: city || 'Sivasagar', phone, email, description,
-      documents, owner: req.user._id, verified: false,
-    });
+    // If we have an existing clinic, we update it. Otherwise, create new.
+    if (clinic) {
+      clinic.name = name;
+      clinic.address = address;
+      clinic.city = city || 'Sivasagar';
+      clinic.phone = phone;
+      clinic.email = email;
+      clinic.description = description;
+      clinic.documents = documents;
+      clinic.verified = false;
+      clinic.rejectionDate = null; // Clear rejection on re-app
+      await clinic.save();
+    } else {
+      clinic = await Clinic.create({
+        name, address, city: city || 'Sivasagar', phone, email, description,
+        documents, owner: req.user._id, verified: false,
+      });
+    }
 
-    // Link clinic to user
+    // Link clinic to user (if not already linked)
     await User.findByIdAndUpdate(req.user._id, { role: 'clinic', clinicId: clinic._id });
 
     res.status(201).json({ message: 'Clinic registered. Awaiting admin verification.', clinic });

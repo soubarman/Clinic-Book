@@ -46,12 +46,19 @@ router.get('/clinics', ...adminGuard, async (req, res) => {
 router.put('/clinics/:id/verify', ...adminGuard, async (req, res) => {
   try {
     const { verified, adminNote } = req.body;
-    const clinic = await Clinic.findByIdAndUpdate(
-      req.params.id,
-      { verified, adminNote: adminNote || '' },
-      { new: true }
-    ).populate('owner', 'name phone');
+    const clinic = await Clinic.findById(req.params.id).populate('owner', 'name phone');
     if (!clinic) return res.status(404).json({ message: 'Clinic not found' });
+
+    clinic.verified = verified;
+    clinic.adminNote = adminNote || '';
+    
+    if (!verified) {
+      clinic.rejectionDate = new Date();
+    } else {
+      clinic.rejectionDate = null;
+    }
+
+    await clinic.save();
     res.json({ clinic, message: verified ? 'Clinic approved' : 'Clinic rejected' });
   } catch (err) {
     res.status(500).json({ message: err.message });

@@ -19,6 +19,7 @@ const clinicSchema = new mongoose.Schema(
     openTime: { type: String, default: '09:00' },
     closeTime: { type: String, default: '18:00' },
     adminNote: { type: String },
+    rejectionDate: { type: Date },
   },
   { timestamps: true }
 );
