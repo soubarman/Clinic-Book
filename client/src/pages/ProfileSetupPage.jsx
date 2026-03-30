@@ -9,6 +9,7 @@ import { useAuth } from '../context/AuthContext';
 const ASSAM_CITIES = ['Sivasagar', 'Guwahati', 'Jorhat', 'Dibrugarh', 'Nagaon', 'Tezpur', 'Bongaigaon', 'Silchar', 'Tinsukia', 'Other'];
 
 export default function ProfileSetupPage() {
+  const { user, login } = useAuth();
   const [name, setName] = useState(user?.name || '');
   const [phone, setPhone] = useState(user?.phone || '');
   const [area, setArea] = useState(user?.area || '');

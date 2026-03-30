@@ -36,7 +36,7 @@ function RequireAuth({ children, role }) {
   const location = useLocation();
   if (loading) return <LoadingSpinner />;
   if (!user) return <Navigate to="/login" state={{ from: location.pathname }} replace />;
-  if (user.profileComplete === false) return <Navigate to="/profile-setup" state={{ from: location.pathname }} replace />;
+  if (user.profileComplete === false && user.role !== 'admin') return <Navigate to="/profile-setup" state={{ from: location.pathname }} replace />;
   if (role && user.role !== role && user.role !== 'admin') return <Navigate to="/" replace />;
   return children;
 }
