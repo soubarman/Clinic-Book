@@ -41,9 +41,30 @@ app.use('/api/bookings', require('./routes/bookings'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/admin', require('./routes/admin'));
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', mode: 'mongodb', time: new Date().toISOString() });
+// Smart Health check
+app.get('/api/health', async (req, res) => {
+  try {
+    const Doctor = require('./models/Doctor');
+    const Clinic = require('./models/Clinic');
+    const [doctors, clinics] = await Promise.all([
+      Doctor.countDocuments(),
+      Clinic.countDocuments()
+    ]);
+    res.json({ 
+      status: 'ok', 
+      database: 'connected', 
+      doctorsCount: doctors, 
+      clinicsCount: clinics,
+      time: new Date().toISOString() 
+    });
+  } catch (err) {
+    res.status(500).json({ 
+      status: 'error', 
+      message: 'Failed to connect to Database', 
+      error: err.message,
+      env_mongo_uri_exists: !!process.env.MONGO_URI 
+    });
+  }
 });
 
 // MongoDB Connection & Listen (Only if run directly, not in Functions)

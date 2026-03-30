@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Bell, MapPin, Star, ChevronRight, Stethoscope } from 'lucide-react';
 import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 import BottomNav from '../../components/BottomNav';
 import DoctorCard from '../../components/DoctorCard';
 import { DoctorCardSkeleton, ClinicCardSkeleton } from '../../components/Skeletons';
@@ -33,6 +34,7 @@ export default function HomePage() {
       setClinics(clinicRes.data.clinics || []);
     } catch (err) {
       console.error(err);
+      toast.error(err.response?.data?.message || err.message || 'Failed to load doctors');
     } finally {
       setLoading(false);
     }
