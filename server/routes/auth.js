@@ -148,20 +148,35 @@ router.patch('/profile', require('../middleware/auth'), async (req, res) => {
 });
 
 // ─────────────────────────────────────────────
-// POST /api/auth/admin-login (phone + password)
+// POST /api/auth/admin-login (Strictly env-locked)
 // ─────────────────────────────────────────────
 router.post('/admin-login', async (req, res) => {
   try {
     const { phone, password } = req.body;
-    // Strictly use environment variable for admin password
     const secureAdminPassword = process.env.ADMIN_PASSWORD;
-    if (!secureAdminPassword || password !== secureAdminPassword) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+    const secureAdminPhone = process.env.ADMIN_PHONE;
+
+    // Reject if credentials don't match the environment setup
+    if (!secureAdminPassword || !secureAdminPhone) {
+      return res.status(500).json({ message: 'Admin system not configured in environment' });
     }
+
+    if (password !== secureAdminPassword || phone !== secureAdminPhone) {
+      return res.status(401).json({ message: 'Invalid administrative credentials' });
+    }
+
     let adminUser = await User.findOne({ phone, role: 'admin' });
+    
+    // Create the "Real" Admin account automatically on first successful login if missing
     if (!adminUser) {
-      adminUser = await User.create({ phone, role: 'admin', name: 'Admin', profileComplete: true });
+      adminUser = await User.create({ 
+        phone, 
+        role: 'admin', 
+        name: process.env.ADMIN_NAME || 'Super Admin', 
+        profileComplete: true 
+      });
     }
+
     const token = generateToken(adminUser._id);
     res.json({ token, user: userPublicFields(adminUser) });
   } catch (err) {
