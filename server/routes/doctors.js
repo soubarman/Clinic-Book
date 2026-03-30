@@ -15,11 +15,13 @@ router.get('/', async (req, res) => {
     if (available !== undefined) filter.available = available === 'true';
     if (search) filter.name = new RegExp(search, 'i');
 
-    const doctors = await Doctor.find(filter)
+    let doctors = await Doctor.find(filter)
       .populate('clinicId', 'name address city verified')
       .sort('-rating');
 
-    // Show all doctors for now (regardless of verification)
+    // ONLY show doctors whose clinic is verified
+    doctors = doctors.filter(doc => doc.clinicId?.verified === true);
+    
     res.json({ doctors });
   } catch (err) {
     res.status(500).json({ message: err.message });

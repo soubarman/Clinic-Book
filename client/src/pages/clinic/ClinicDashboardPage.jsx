@@ -86,6 +86,26 @@ export default function ClinicDashboardPage() {
       </div>
 
       <div style={{ padding: '20px' }}>
+        {/* Unverified Banner */}
+        {!loading && clinic && !clinic.verified && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
+            style={{ 
+              background: '#FEF2F2', border: '1px solid #FCA5A5', 
+              borderRadius: 20, padding: 20, marginBottom: 24,
+              display: 'flex', gap: 16, alignItems: 'flex-start'
+            }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ fontSize: 24 }}>⏳</span>
+            </div>
+            <div>
+              <h3 style={{ fontWeight: 800, fontSize: 15, color: '#991B1B', marginBottom: 4 }}>Pending Verification</h3>
+              <p style={{ fontSize: 12, color: '#B91C1C', lineHeight: 1.6 }}>
+                Your clinic is currently hidden from patients. Our team is reviewing your documents. You can still view your dashboard, but you won't be able to manage doctors until verified.
+              </p>
+            </div>
+          </motion.div>
+        )}
+
         {/* Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 }}>
           {loading ? [...Array(4)].map((_, i) => <StatCardSkeleton key={i} />) :
@@ -103,16 +123,24 @@ export default function ClinicDashboardPage() {
             ))
           }
         </div>
-
-        {/* Quick actions */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
-          <button onClick={() => navigate('/clinic/doctors')} className="btn-primary" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-            <Stethoscope size={16} /> Manage Doctors
-          </button>
-          <button className="btn-outline" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-            <Bell size={16} /> Notifications
-          </button>
-        </div>
+ 
+         {/* Quick actions */}
+         <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
+           <button 
+             onClick={() => clinic?.verified && navigate('/clinic/doctors')} 
+             className={!clinic?.verified ? 'btn-outline' : 'btn-primary'}
+             style={{ 
+               flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+               opacity: !clinic?.verified ? 0.6 : 1,
+               cursor: !clinic?.verified ? 'not-allowed' : 'pointer',
+               borderColor: !clinic?.verified ? '#E2E8F0' : 'var(--primary)'
+             }}>
+             <Stethoscope size={16} /> Manage Doctors
+           </button>
+           <button className="btn-outline" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+             <Bell size={16} /> Notifications
+           </button>
+         </div>
 
         {/* Today's bookings */}
         <div>

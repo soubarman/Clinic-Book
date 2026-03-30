@@ -14,19 +14,22 @@ const emptyForm = { name: '', specialization: 'General Physician', qualification
 export default function ManageDoctorsPage() {
   const navigate = useNavigate();
   const [doctors, setDoctors] = useState([]);
+  const [clinic, setClinic] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { loadDoctors(); }, []);
+  useEffect(() => { loadData(); }, []);
 
-  const loadDoctors = async () => {
+  const loadData = async () => {
     try {
-      const res = await api.get('/doctors/clinic/mine');
-      setDoctors(res.data.doctors || []);
-    } catch (err) { toast.error('Failed to load doctors'); }
+      const docRes = await api.get('/doctors/clinic/mine');
+      const clinicRes = await api.get('/clinics/mine/info');
+      setDoctors(docRes.data.doctors || []);
+      setClinic(clinicRes.data.clinic);
+    } catch (err) { toast.error('Failed to load data'); }
     finally { setLoading(false); }
   };
 
@@ -50,7 +53,7 @@ export default function ManageDoctorsPage() {
       setShowForm(false);
       setForm(emptyForm);
       setEditId(null);
-      loadDoctors();
+      loadData();
     } catch (err) { toast.error(err.response?.data?.message || 'Failed to save'); }
     finally { setSaving(false); }
   };
@@ -79,10 +82,16 @@ export default function ManageDoctorsPage() {
             <ArrowLeft size={18} color="white" />
           </button>
           <h1 style={{ color: 'white', fontWeight: 800, fontSize: 20, flex: 1 }}>Manage Doctors</h1>
-          <button onClick={() => { setForm(emptyForm); setEditId(null); setShowForm(true); }} style={{
-            background: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: 100, padding: '8px 16px',
-            display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, cursor: 'pointer', color: '#10B981',
-          }}>
+          <button 
+            disabled={!clinic?.verified}
+            onClick={() => { setForm(emptyForm); setEditId(null); setShowForm(true); }} 
+            style={{
+              background: !clinic?.verified ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.9)', 
+              border: 'none', borderRadius: 100, padding: '8px 16px',
+              display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, 
+              cursor: !clinic?.verified ? 'not-allowed' : 'pointer', 
+              color: '#10B981',
+            }}>
             <Plus size={16} /> Add
           </button>
         </div>
@@ -90,6 +99,20 @@ export default function ManageDoctorsPage() {
       </div>
 
       <div style={{ padding: '20px' }}>
+        {/* Unverified Banner */}
+        {!loading && clinic && !clinic.verified && (
+          <div style={{ 
+            background: '#FEF2F2', border: '1px solid #FCA5A5', 
+            borderRadius: 20, padding: '16px 20px', marginBottom: 20,
+            display: 'flex', gap: 12, alignItems: 'center'
+          }}>
+            <span style={{ fontSize: 20 }}>⚠️</span>
+            <p style={{ fontSize: 13, color: '#991B1B', fontWeight: 600 }}>
+              Action restricted: Your clinic must be verified by an admin to add doctors.
+            </p>
+          </div>
+        )}
+
         {/* Doctor list */}
         {loading ? (
           <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 40 }}>Loading...</p>
@@ -98,7 +121,12 @@ export default function ManageDoctorsPage() {
             <span style={{ fontSize: 48, display: 'block', marginBottom: 12 }}>👨‍⚕️</span>
             <p style={{ fontWeight: 600, marginBottom: 4 }}>No doctors added yet</p>
             <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 20 }}>Add your first doctor to start accepting bookings</p>
-            <button className="btn-primary" onClick={() => { setForm(emptyForm); setShowForm(true); }}>
+            <button 
+              className="btn-primary" 
+              disabled={!clinic?.verified}
+              onClick={() => { setForm(emptyForm); setShowForm(true); }}
+              style={{ opacity: !clinic?.verified ? 0.5 : 1, cursor: !clinic?.verified ? 'not-allowed' : 'pointer' }}
+            >
               <Plus size={16} style={{ marginRight: 6 }} /> Add Doctor
             </button>
           </div>

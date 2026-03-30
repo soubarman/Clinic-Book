@@ -15,8 +15,8 @@ const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 router.get('/', async (req, res) => {
   try {
     const { city, search } = req.query;
-    // Show all active clinics for now
-    const filter = { active: true };
+    // Only show active AND verified clinics to the public
+    const filter = { active: true, verified: true };
     if (city) filter.city = new RegExp(city, 'i');
     if (search) filter.name = new RegExp(search, 'i');
 
